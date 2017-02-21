@@ -26,6 +26,7 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.util.DomainInputResolver;
 import com.sk89q.worldguard.protection.util.DomainInputResolver.UserLocatorPolicy;
+import com.sk89q.worldguard.protection.util.UnresolvedNamesException;
 
 import javax.annotation.Nullable;
 import java.util.concurrent.Callable;
@@ -47,9 +48,12 @@ public class RegionAdder implements Callable<ProtectedRegion> {
     /**
      * Create a new instance.
      *
-     * @param plugin the plugin
-     * @param manager the manage
-     * @param region the region
+     * @param plugin
+     *            the plugin
+     * @param manager
+     *            the manage
+     * @param region
+     *            the region
      */
     public RegionAdder(WorldGuardPlugin plugin, RegionManager manager, ProtectedRegion region) {
         checkNotNull(plugin);
@@ -59,33 +63,43 @@ public class RegionAdder implements Callable<ProtectedRegion> {
         this.plugin = plugin;
         this.manager = manager;
         this.region = region;
+        
+        if(plugin.getGlobalStateManager().useNamesOnly) 
+            locatorPolicy = UserLocatorPolicy.NAME_ONLY;
     }
 
     /**
      * Add the owners from the command's arguments.
      *
-     * @param args the arguments
-     * @param namesIndex the index in the list of arguments to read the first name from
+     * @param args
+     *            the arguments
+     * @param namesIndex
+     *            the index in the list of arguments to read the first name from
      */
     public void addOwnersFromCommand(CommandContext args, int namesIndex) {
         if (args.argsLength() >= namesIndex) {
-            setLocatorPolicy(args.hasFlag('n') ? UserLocatorPolicy.NAME_ONLY : UserLocatorPolicy.UUID_ONLY);
+            setLocatorPolicy(args.hasFlag('n') || plugin.getGlobalStateManager().useNamesOnly
+                    ? UserLocatorPolicy.NAME_ONLY : UserLocatorPolicy.UUID_ONLY);
             setOwnersInput(args.getSlice(namesIndex));
         }
     }
 
     @Override
     public ProtectedRegion call() throws Exception {
+        setOwners();
+
+        manager.addRegion(region);
+
+        return region;
+    }
+
+    private void setOwners() throws UnresolvedNamesException {
         if (ownersInput != null) {
             DomainInputResolver resolver = new DomainInputResolver(plugin.getProfileService(), ownersInput);
             resolver.setLocatorPolicy(locatorPolicy);
             DefaultDomain domain = resolver.call();
             region.getOwners().addAll(domain);
         }
-
-        manager.addRegion(region);
-
-        return region;
     }
 
     @Nullable
@@ -102,6 +116,10 @@ public class RegionAdder implements Callable<ProtectedRegion> {
     }
 
     public void setLocatorPolicy(UserLocatorPolicy locatorPolicy) {
+        if (plugin.getGlobalStateManager().useNamesOnly && locatorPolicy != UserLocatorPolicy.NAME_ONLY) {
+            locatorPolicy = UserLocatorPolicy.NAME_ONLY;
+            // dont let use uuids if we not want this
+        }
         this.locatorPolicy = locatorPolicy;
     }
 

@@ -25,6 +25,7 @@ package com.sk89q.worldguard.protection.managers.storage;
 public enum DriverType {
 
     YAML,
-    MYSQL
+    MYSQL,
+    SEPARATE_YAML
 
 }

@@ -18,29 +18,12 @@ General Public License v3.
 
 Currently, Bukkit is required to use WorldGuard. You can get a release copy of WorldGuard from the [BukkitDev site](http://dev.bukkit.org/bukkit-plugins/worldguard/).
 
-Compiling
+
+New features
 ---------
 
-The project is written for Java 6 and our build process makes use of
-[Gradle](http://gradle.org). Detailed compilation information
-[can be found on the wiki](http://wiki.sk89q.com/wiki/WorldGuard/Development#Compiling).
-
-Dependencies are automatically handled by Gradle.
-
-Contributing
-------------
-
-We happily accept contributions, especially through pull requests on GitHub.
-
-Please read CONTRIBUTING.md for important guidelines to follow.
-
-Submissions must be licensed under the GNU Lesser General Public License v3.
-
-Links
------
-
-* [Homepage](http://enginehub.org/worldguard)
-* [IRC channel](http://skq.me/irc/irc.esper.net/sk89q/) (#sk89q on irc.esper.net)
-* [Issue tracker](http://youtrack.sk89q.com/issues/WORLDGUARD)
-* [Continuous integration](http://builds.enginehub.org)
-* [End-user documentation](http://wiki.sk89q.com/wiki/WorldGuard)
+* Event firing when player creates new region using commands
+* Ability to use player names instead of UUIDs (regions.use-player-names-instead-of-uuids setting)
+* Optimized yaml storage (separate file for each region with partial saving support)
+To change default yaml to new set regions.storage.driver-type to SEPARATED_YAML
+* Localization system(planned)

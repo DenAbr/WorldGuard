@@ -69,7 +69,7 @@ public class MemberCommands extends RegionCommandsBase {
         // Resolve members asynchronously
         DomainInputResolver resolver = new DomainInputResolver(
                 plugin.getProfileService(), args.getParsedPaddedSlice(1, 0));
-        resolver.setLocatorPolicy(args.hasFlag('n') ? UserLocatorPolicy.NAME_ONLY : UserLocatorPolicy.UUID_ONLY);
+        resolver.setLocatorPolicy(args.hasFlag('n') || plugin.getGlobalStateManager().useNamesOnly ? UserLocatorPolicy.NAME_ONLY : UserLocatorPolicy.UUID_ONLY);
 
         // Then add it to the members
         ListenableFuture<DefaultDomain> future = Futures.transform(
@@ -132,7 +132,7 @@ public class MemberCommands extends RegionCommandsBase {
         // Resolve owners asynchronously
         DomainInputResolver resolver = new DomainInputResolver(
                 plugin.getProfileService(), args.getParsedPaddedSlice(1, 0));
-        resolver.setLocatorPolicy(args.hasFlag('n') ? UserLocatorPolicy.NAME_ONLY : UserLocatorPolicy.UUID_ONLY);
+        resolver.setLocatorPolicy(args.hasFlag('n') || plugin.getGlobalStateManager().useNamesOnly  ? UserLocatorPolicy.NAME_ONLY : UserLocatorPolicy.UUID_ONLY);
 
         // Then add it to the owners
         ListenableFuture<DefaultDomain> future = Futures.transform(
@@ -178,7 +178,7 @@ public class MemberCommands extends RegionCommandsBase {
             // Resolve members asynchronously
             DomainInputResolver resolver = new DomainInputResolver(
                     plugin.getProfileService(), args.getParsedPaddedSlice(1, 0));
-            resolver.setLocatorPolicy(args.hasFlag('n') ? UserLocatorPolicy.NAME_ONLY : UserLocatorPolicy.UUID_AND_NAME);
+            resolver.setLocatorPolicy(args.hasFlag('n') || plugin.getGlobalStateManager().useNamesOnly ? UserLocatorPolicy.NAME_ONLY : UserLocatorPolicy.UUID_AND_NAME);
 
             // Then remove it from the members
             future = Futures.transform(
@@ -225,7 +225,7 @@ public class MemberCommands extends RegionCommandsBase {
             // Resolve owners asynchronously
             DomainInputResolver resolver = new DomainInputResolver(
                     plugin.getProfileService(), args.getParsedPaddedSlice(1, 0));
-            resolver.setLocatorPolicy(args.hasFlag('n') ? UserLocatorPolicy.NAME_ONLY : UserLocatorPolicy.UUID_AND_NAME);
+            resolver.setLocatorPolicy(args.hasFlag('n') || plugin.getGlobalStateManager().useNamesOnly ? UserLocatorPolicy.NAME_ONLY : UserLocatorPolicy.UUID_AND_NAME);
 
             // Then remove it from the owners
             future = Futures.transform(
