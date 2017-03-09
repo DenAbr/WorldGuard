@@ -137,6 +137,7 @@ public final class RegionCommands extends RegionCommandsBase {
             }
         }
         region.setOwners(preOwners);
+        region.setFlags(plugin.getGlobalStateManager().get(player.getWorld()).defaultFlags);
 
         PlayerCreateRegionEvent event = new PlayerCreateRegionEvent(player, region);
         Bukkit.getPluginManager().callEvent(event);
@@ -278,7 +279,9 @@ public final class RegionCommands extends RegionCommandsBase {
             }
         }
 
-        if (wcfg.maxClaimVolume >= Integer.MAX_VALUE) {
+        int maxClaimVolume = wcfg.getMaxClaimVolume(player);
+
+        if (maxClaimVolume >= Integer.MAX_VALUE) {
             throw new CommandException("The maximum claim volume get in the configuration is higher than is supported. "
                     + "Currently, it must be " + Integer.MAX_VALUE
                     + " or smaller. Please contact a server administrator.");
@@ -290,10 +293,10 @@ public final class RegionCommands extends RegionCommandsBase {
                 throw new CommandException("Polygons are currently not supported for /rg claim.");
             }
 
-            if (region.volume() > wcfg.maxClaimVolume) {
+            if (region.volume() > maxClaimVolume) {
                 player.sendMessage(ChatColor.RED + "This region is too large to claim.");
                 player.sendMessage(
-                        ChatColor.RED + "Max. volume: " + wcfg.maxClaimVolume + ", your volume: " + region.volume());
+                        ChatColor.RED + "Max. volume: " + maxClaimVolume + ", your volume: " + region.volume());
                 return;
             }
         }
@@ -305,7 +308,8 @@ public final class RegionCommands extends RegionCommandsBase {
             }
         }
         region.setOwners(preOwners);
-
+        region.setFlags(wcfg.defaultFlags);
+        
         PlayerCreateRegionEvent event = new PlayerCreateRegionEvent(player, region);
         Bukkit.getPluginManager().callEvent(event);
         if (event.isCancelled()) {

@@ -19,6 +19,24 @@
 
 package com.sk89q.worldguard.bukkit;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.bukkit.block.Block;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffectType;
+import org.yaml.snakeyaml.parser.ParserException;
+
 import com.sk89q.util.yaml.YAMLFormat;
 import com.sk89q.util.yaml.YAMLProcessor;
 import com.sk89q.worldguard.blacklist.Blacklist;
@@ -33,19 +51,10 @@ import com.sk89q.worldguard.bukkit.internal.BukkitBlacklist;
 import com.sk89q.worldguard.bukkit.internal.TargetMatcherSet;
 import com.sk89q.worldguard.chest.ChestProtection;
 import com.sk89q.worldguard.chest.SignChestProtection;
+import com.sk89q.worldguard.protection.flags.DefaultFlag;
+import com.sk89q.worldguard.protection.flags.Flag;
+import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.util.report.Unreported;
-import org.bukkit.block.Block;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
-import org.bukkit.potion.PotionEffectType;
-import org.yaml.snakeyaml.parser.ParserException;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Holds the configuration for individual worlds.
@@ -58,26 +67,28 @@ public class WorldConfiguration {
     private static final Logger log = Logger.getLogger(WorldConfiguration.class.getCanonicalName());
     private static final TargetMatcherParser matcherParser = new TargetMatcherParser();
 
-    public static final String CONFIG_HEADER = "#\r\n" +
-            "# WorldGuard's world configuration file\r\n" +
-            "#\r\n" +
-            "# This is a world configuration file. Anything placed into here will only\r\n" +
-            "# affect this world. If you don't put anything in this file, then the\r\n" +
-            "# settings will be inherited from the main configuration file.\r\n" +
-            "#\r\n" +
-            "# If you see {} below, that means that there are NO entries in this file.\r\n" +
-            "# Remove the {} and add your own entries.\r\n" +
-            "#\r\n";
+    public static final String CONFIG_HEADER = "#\r\n" + "# WorldGuard's world configuration file\r\n" + "#\r\n"
+            + "# This is a world configuration file. Anything placed into here will only\r\n"
+            + "# affect this world. If you don't put anything in this file, then the\r\n"
+            + "# settings will be inherited from the main configuration file.\r\n" + "#\r\n"
+            + "# If you see {} below, that means that there are NO entries in this file.\r\n"
+            + "# Remove the {} and add your own entries.\r\n" + "#\r\n";
 
-    @Unreported private WorldGuardPlugin plugin;
+    @Unreported
+    private WorldGuardPlugin plugin;
 
-    @Unreported private String worldName;
-    @Unreported private YAMLProcessor parentConfig;
-    @Unreported private YAMLProcessor config;
+    @Unreported
+    private String worldName;
+    @Unreported
+    private YAMLProcessor parentConfig;
+    @Unreported
+    private YAMLProcessor config;
     private File blacklistFile;
 
-    @Unreported private Blacklist blacklist;
-    @Unreported private ChestProtection chestProtection = new SignChestProtection();
+    @Unreported
+    private Blacklist blacklist;
+    @Unreported
+    private ChestProtection chestProtection = new SignChestProtection();
 
     /* Configuration data start */
     public boolean summaryOnStart;
@@ -186,15 +197,20 @@ public class WorldConfiguration {
 
     public TargetMatcherSet blockUseAtFeet;
     private Map<String, Integer> maxRegionCounts;
+    private Map<String, Integer> maxClaimVolumes;
+    public Map<Flag<?>, Object> defaultFlags;
 
     /* Configuration data end */
 
     /**
      * Construct the object.
      *
-     * @param plugin The WorldGuardPlugin instance
-     * @param worldName The world name that this WorldConfiguration is for.
-     * @param parentConfig The parent configuration to read defaults from
+     * @param plugin
+     *            The WorldGuardPlugin instance
+     * @param worldName
+     *            The world name that this WorldConfiguration is for.
+     * @param parentConfig
+     *            The parent configuration to read defaults from
      */
     public WorldConfiguration(WorldGuardPlugin plugin, String worldName, YAMLProcessor parentConfig) {
         File baseFolder = new File(plugin.getDataFolder(), "worlds/" + worldName);
@@ -346,8 +362,8 @@ public class WorldConfiguration {
         opPermissions = getBoolean("op-permissions", true);
 
         buildPermissions = getBoolean("build-permission-nodes.enable", false);
-        buildPermissionDenyMessage = CommandUtils.replaceColorMacros(
-                getString("build-permission-nodes.deny-message", "&eSorry, but you are not permitted to do that here."));
+        buildPermissionDenyMessage = CommandUtils.replaceColorMacros(getString("build-permission-nodes.deny-message",
+                "&eSorry, but you are not permitted to do that here."));
 
         strictEntitySpawn = getBoolean("event-handling.block-entity-spawns-with-untraceable-cause", false);
         allowAllInteract = getTargetMatchers("event-handling.interaction-whitelist");
@@ -463,7 +479,6 @@ public class WorldConfiguration {
         highFreqFlags = getBoolean("regions.high-frequency-flags", false);
         checkLiquidFlow = getBoolean("regions.protect-against-liquid-flow", false);
         regionWand = getInt("regions.wand", 334);
-        maxClaimVolume = getInt("regions.max-claim-volume", 30000);
         claimOnlyInsideExistingRegions = getBoolean("regions.claim-only-inside-existing-regions", false);
         boundedLocationFlags = getBoolean("regions.location-flags-only-inside-regions", false);
 
@@ -476,6 +491,35 @@ public class WorldConfiguration {
                 Object val = getProperty("regions.max-region-count-per-player." + key);
                 if (val != null && val instanceof Number) {
                     maxRegionCounts.put(key, ((Number) val).intValue());
+                }
+            }
+        }
+
+        maxClaimVolume = getInt("regions.max-claim-volume", 30000);
+        maxClaimVolumes = new HashMap<String, Integer>();
+        maxClaimVolumes.put(null, maxClaimVolume);
+
+        defaultFlags = new HashMap<>();
+        if (parentConfig.getNode("regions.force-set-flags") != null) {
+            Map<String, Object> node = parentConfig.getNode("regions.force-set-flags").getMap();
+            defaultFlags.putAll(plugin.getFlagRegistry().unmarshal(node, true));
+        } else {
+            defaultFlags.put(DefaultFlag.PVP, DefaultFlag.PVP.getDefault());
+            defaultFlags.put(DefaultFlag.BLOCKED_CMDS, new HashSet<String>() {
+                {
+                    add("/op");
+                    add("/tp");
+                }
+            });
+            defaultFlags.put(DefaultFlag.GREET_MESSAGE, "This is default message from WorldGuard");
+            parentConfig.setProperty("regions.force-set-flags", Flags.marshal(defaultFlags));
+        }
+
+        for (String key : getKeys("regions.max-claim-volume")) {
+            if (!key.equalsIgnoreCase("default")) {
+                Object val = getProperty("regions.max-claim-volume." + key);
+                if (val != null && val instanceof Number) {
+                    maxClaimVolumes.put(key, ((Number) val).intValue());
                 }
             }
         }
@@ -546,40 +590,33 @@ public class WorldConfiguration {
                 }
 
                 if (logFile) {
-                    FileHandler handler =
-                            new FileHandler(logFilePattern, logFileCacheSize, worldName, log);
+                    FileHandler handler = new FileHandler(logFilePattern, logFileCacheSize, worldName, log);
                     blacklistLogger.addHandler(handler);
                 }
             }
         } catch (FileNotFoundException e) {
             log.log(Level.WARNING, "WorldGuard blacklist does not exist.");
         } catch (IOException e) {
-            log.log(Level.WARNING, "Could not load WorldGuard blacklist: "
-                    + e.getMessage());
+            log.log(Level.WARNING, "Could not load WorldGuard blacklist: " + e.getMessage());
         }
 
         // Print an overview of settings
         if (summaryOnStart) {
-            log.log(Level.INFO, blockTNTExplosions
-                    ? "(" + worldName + ") TNT ignition is blocked."
+            log.log(Level.INFO, blockTNTExplosions ? "(" + worldName + ") TNT ignition is blocked."
                     : "(" + worldName + ") TNT ignition is PERMITTED.");
-            log.log(Level.INFO, blockLighter
-                    ? "(" + worldName + ") Lighters are blocked."
+            log.log(Level.INFO, blockLighter ? "(" + worldName + ") Lighters are blocked."
                     : "(" + worldName + ") Lighters are PERMITTED.");
-            log.log(Level.INFO, preventLavaFire
-                    ? "(" + worldName + ") Lava fire is blocked."
+            log.log(Level.INFO, preventLavaFire ? "(" + worldName + ") Lava fire is blocked."
                     : "(" + worldName + ") Lava fire is PERMITTED.");
 
             if (disableFireSpread) {
                 log.log(Level.INFO, "(" + worldName + ") All fire spread is disabled.");
             } else {
                 if (disableFireSpreadBlocks.size() > 0) {
-                    log.log(Level.INFO, "(" + worldName
-                            + ") Fire spread is limited to "
+                    log.log(Level.INFO, "(" + worldName + ") Fire spread is limited to "
                             + disableFireSpreadBlocks.size() + " block types.");
                 } else {
-                    log.log(Level.INFO, "(" + worldName
-                            + ") Fire spread is UNRESTRICTED.");
+                    log.log(Level.INFO, "(" + worldName + ") Fire spread is UNRESTRICTED.");
                 }
             }
         }
@@ -651,6 +688,22 @@ public class WorldConfiguration {
         }
         if (max <= -1) {
             max = maxRegionCountPerPlayer;
+        }
+        return max;
+    }
+
+    public int getMaxClaimVolume(Player player) {
+        int max = -1;
+        for (String group : plugin.getGroups(player)) {
+            if (maxClaimVolumes.containsKey(group)) {
+                int groupMax = maxClaimVolumes.get(group);
+                if (max < groupMax) {
+                    max = groupMax;
+                }
+            }
+        }
+        if (max <= -1) {
+            max = maxClaimVolume;
         }
         return max;
     }
