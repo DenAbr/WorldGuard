@@ -54,6 +54,7 @@ import com.sk89q.worldguard.chest.SignChestProtection;
 import com.sk89q.worldguard.protection.flags.DefaultFlag;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.Flags;
+import com.sk89q.worldguard.protection.flags.StateFlag.State;
 import com.sk89q.worldguard.util.report.Unreported;
 
 /**
@@ -499,12 +500,21 @@ public class WorldConfiguration {
         maxClaimVolumes = new HashMap<String, Integer>();
         maxClaimVolumes.put(null, maxClaimVolume);
 
+        for (String key : getKeys("regions.max-claim-volume")) {
+            if (!key.equalsIgnoreCase("default")) {
+                Object val = getProperty("regions.max-claim-volume." + key);
+                if (val != null && val instanceof Number) {
+                    maxClaimVolumes.put(key, ((Number) val).intValue());
+                }
+            }
+        }
+        
         defaultFlags = new HashMap<>();
         if (parentConfig.getNode("regions.force-set-flags") != null) {
             Map<String, Object> node = parentConfig.getNode("regions.force-set-flags").getMap();
             defaultFlags.putAll(plugin.getFlagRegistry().unmarshal(node, true));
         } else {
-            defaultFlags.put(DefaultFlag.PVP, DefaultFlag.PVP.getDefault());
+            defaultFlags.put(DefaultFlag.PVP, State.ALLOW);
             defaultFlags.put(DefaultFlag.BLOCKED_CMDS, new HashSet<String>() {
                 {
                     add("/op");
@@ -515,14 +525,6 @@ public class WorldConfiguration {
             parentConfig.setProperty("regions.force-set-flags", Flags.marshal(defaultFlags));
         }
 
-        for (String key : getKeys("regions.max-claim-volume")) {
-            if (!key.equalsIgnoreCase("default")) {
-                Object val = getProperty("regions.max-claim-volume." + key);
-                if (val != null && val instanceof Number) {
-                    maxClaimVolumes.put(key, ((Number) val).intValue());
-                }
-            }
-        }
 
         // useiConomy = getBoolean("iconomy.enable", false);
         // buyOnClaim = getBoolean("iconomy.buy-on-claim", false);

@@ -27,4 +27,5 @@ New features
 * Optimized yaml storage (separate file for each region with partial saving support)
 To change default yaml to new set regions.storage.driver-type to SEPARATED_YAML
 * Configurable default flags for new created region
+* Configurable region volume per group
 * Localization system(planned)
